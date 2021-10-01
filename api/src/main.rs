@@ -1,13 +1,14 @@
 extern crate dotenv;
 extern crate rocket;
-mod tools;
-mod models;
-mod projects;
 
 use dotenv::dotenv;
 use sqlx::postgres::PgPool;
 
-pub const PAGE_SIZE: u32 = 12;
+mod tools;
+mod models;
+mod projects;
+mod users;
+mod auth;
 
 #[rocket::launch]
 async fn rocket() -> _ {
@@ -19,5 +20,6 @@ async fn rocket() -> _ {
     rocket::build()
         .manage::<PgPool>(pool)
         .mount("/projects", projects::routes())
+        .mount("/users", users::routes())
+        .mount("/auth", auth::routes())
 }
-

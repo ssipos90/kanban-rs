@@ -5,6 +5,8 @@ use rocket::response::{status::{Custom}};
 use rocket::serde::json::{Json};
 use sqlx::postgres::PgPool;
 
+pub const PAGE_SIZE: u32 = 12;
+
 pub type Res<T> = Result<Json<T>, Custom<String>>;
 
 pub async fn acquire_db(pool: &PgPool) -> Result<PoolConnection<Postgres>, Custom<String>> {

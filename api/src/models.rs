@@ -1,11 +1,32 @@
 use ormx::Table;
 use rocket::form::FromForm;
-use rocket::serde::{Deserialize, Serialize};
+use rocket::serde::Serialize;
+use sqlx::types::time::Date;
 
-#[derive(Debug, Table, FromForm, Serialize, Deserialize)]
+#[derive(Debug, Table, FromForm, Serialize)]
 #[ormx(table = "projects", id = id, insertable)]
 pub struct Project {
     #[ormx(column = "id", default)]
     pub id: i32,
     pub name: String,
+}
+
+#[derive(Debug, Table)]
+#[ormx(table = "users", id = id, insertable)]
+pub struct User {
+    #[ormx(column = "id", default)]
+    pub id: i32,
+    pub name: String,
+    pub email: String,
+    pub password_hash: Option<String>,
+    #[ormx(default, set)]
+    pub created_at: Date,
+}
+
+#[derive(Debug, Table, Serialize)]
+#[ormx(table = "users", id = id)]
+pub struct ListUser {
+    pub id: i32,
+    pub name: String,
+    pub email: String,
 }

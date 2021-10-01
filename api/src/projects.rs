@@ -1,7 +1,6 @@
 use crate::{
     models::{InsertProject, Project},
-    tools::{acquire_db, Res},
-    PAGE_SIZE,
+    tools::{acquire_db, Res, PAGE_SIZE}
 };
 use ormx::{Insert, Table};
 use rocket::{
