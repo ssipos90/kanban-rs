@@ -1,11 +1,11 @@
-use crate::{models::User, tools::{acquire_db, Res}};
+use sqlx::PgPool;
 use rocket::{
     http::Status,
     response::status::Custom,
     serde::{json::Json, Deserialize, Serialize},
     Route,
 };
-use sqlx::PgPool;
+use crate::{models::User, tools::{acquire_db, Res}};
 
 #[derive(Deserialize)]
 struct LoginCredentials<'r> {
@@ -41,6 +41,7 @@ async fn do_login<'r>(
             )
         })?;
 
+    // TODO actually check password as bcrypt or smtn
     if user.password_hash.unwrap().eq(credentials.password) {
         return Err(Custom(
             Status::Unauthorized,
@@ -48,8 +49,7 @@ async fn do_login<'r>(
         ));
     }
 
-    // TODO check password lol
-    // TODO generate json token
+    // TODO propertly generate json token
     let mut token = user.id.to_string();
     token.push(':');
     token.push_str(&user.email);
@@ -60,3 +60,4 @@ async fn do_login<'r>(
 pub fn routes() -> Vec<Route> {
     rocket::routes![do_login]
 }
+

@@ -4,11 +4,11 @@ extern crate rocket;
 use dotenv::dotenv;
 use sqlx::postgres::PgPool;
 
-mod tools;
+mod auth;
 mod models;
 mod projects;
+mod tools;
 mod users;
-mod auth;
 
 #[rocket::launch]
 async fn rocket() -> _ {

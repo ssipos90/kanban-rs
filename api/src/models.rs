@@ -30,3 +30,14 @@ pub struct ListUser {
     pub name: String,
     pub email: String,
 }
+
+#[derive(Debug, Table)]
+#[ormx(table = "project_users", id = id, insertable)]
+pub struct ProjectUser {
+    #[ormx(column = "id", default)]
+    pub id: i32,
+    pub project_id: i32,
+    pub user_id: i32,
+    #[ormx(default, set)]
+    pub added_at: Date,
+}
