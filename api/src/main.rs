@@ -23,3 +23,4 @@ async fn rocket() -> _ {
         .mount("/users", users::routes())
         .mount("/auth", auth::routes())
 }
+

@@ -1,4 +1,4 @@
-CREATE TABLE project_users (
+CREATE TABLE project_members (
     id SERIAL PRIMARY KEY,
     project_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -13,5 +13,5 @@ CREATE TABLE project_users (
 	  REFERENCES users(id)
 );
 
-CREATE UNIQUE INDEX project_user_idx ON project_users (project_id, user_id);
+CREATE UNIQUE INDEX project_member_idx ON project_members (project_id, user_id);
 

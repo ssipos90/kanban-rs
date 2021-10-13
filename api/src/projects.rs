@@ -1,5 +1,5 @@
 use crate::{
-    models::{InsertProject, InsertProjectUser, Project, ProjectUser, User},
+    models::{InsertProject, InsertProjectMember, Project, ProjectMember, User},
     tools::{acquire_db, Res, PAGE_SIZE},
 };
 use ormx::{Insert, Table};
@@ -108,41 +108,56 @@ async fn update_project<'r>(
 }
 
 #[derive(Deserialize)]
-struct AddProjectUser {
+struct AddProjectMember {
     user_id: i32,
 }
 
 
 #[derive(Serialize)]
-struct Smf {
+struct AddProjectMemberRes {
     project_id: i32,
     user_id: i32,
     added_at: String,
 }
 
 #[rocket::post("/<project_id>/users", format = "application/json", data = "<input>")]
-async fn add_project_user<'r>(
+async fn add_project_member<'r>(
     pool: &rocket::State<PgPool>,
     project_id: i32,
-    input: Json<AddProjectUser>,
-) -> Res<Smf> {
-    let mut db = acquire_db(pool).await?;
+    input: Json<AddProjectMember>,
+) -> Res<AddProjectMemberRes> {
+    let (mut conn1, mut conn2, mut conn3) = tokio::try_join!(
+        acquire_db(pool),
+        acquire_db(pool),
+        acquire_db(pool),
+    )?;
 
-    let project = Project::get(&mut *db, project_id)
-        .await
+    let (project_res, user_res, project_member_res) = tokio::join!(
+        Project::get(&mut *conn1, project_id),
+        User::get(&mut *conn2, input.user_id),
+        ormx::conditional_query_as!(
+            ProjectMember,
+            "SELECT * "
+            "FROM project_members"
+            "WHERE project_id =" ?(project_id)
+            "AND user_id =" ?(input.user_id)
+        )
+            .fetch_one(&mut *conn3)
+    );
+
+    let project = project_res
         .map_err(|e| match e {
-        sqlx::Error::RowNotFound => Custom(
-            Status::NotFound,
-            format!("project_id {} not found", project_id),
-        ),
-        _ => Custom(
-            Status::InternalServerError,
-            String::from("Error fetching from database."),
-        ),
-    })?;
+            sqlx::Error::RowNotFound => Custom(
+                Status::NotFound,
+                format!("project_id {} not found", project_id),
+            ),
+            _ => Custom(
+                Status::InternalServerError,
+                String::from("Error fetching from database."),
+            ),
+        })?;
 
-    let user = User::get(&mut *db, input.user_id)
-        .await
+    let user = user_res
         .map_err(|e| match e {
             sqlx::Error::RowNotFound => Custom(
                 Status::NotFound,
@@ -154,17 +169,7 @@ async fn add_project_user<'r>(
             ),
         })?;
 
-    let project_user_res = ormx::conditional_query_as!(
-        ProjectUser,
-        "SELECT * "
-        "FROM project_users"
-        "WHERE project_id =" ?(project_id)
-        "AND user_id =" ?(input.user_id)
-    )
-    .fetch_one(&mut *db)
-    .await;
-
-    match project_user_res {
+    match project_member_res {
         Err(e) => match e {
             sqlx::Error::RowNotFound => Ok(()),
             _ => Err(Custom(
@@ -175,13 +180,13 @@ async fn add_project_user<'r>(
         Ok(_) => Err(Custom(Status::InternalServerError, String::from("User is already bound to this project."))),
     }?;
 
-    InsertProjectUser {
+    InsertProjectMember {
         project_id: project.id,
         user_id: user.id,
     }
-    .insert(&mut *db)
+    .insert(&mut *conn1)
     .await
-    .map(|r| Json(Smf{
+    .map(|r| Json(AddProjectMemberRes{
         project_id: r.project_id,
         user_id: r.user_id,
         added_at: format!("{}", r.added_at)
@@ -199,6 +204,7 @@ pub fn routes() -> Vec<Route> {
         list_projects,
         create_project,
         update_project,
-        add_project_user
+        add_project_member
     ]
 }
+

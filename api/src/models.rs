@@ -32,8 +32,8 @@ pub struct ListUser {
 }
 
 #[derive(Debug, Table)]
-#[ormx(table = "project_users", id = id, insertable)]
-pub struct ProjectUser {
+#[ormx(table = "project_members", id = id, insertable)]
+pub struct ProjectMember {
     #[ormx(column = "id", default)]
     pub id: i32,
     pub project_id: i32,
@@ -41,3 +41,4 @@ pub struct ProjectUser {
     #[ormx(default, set)]
     pub added_at: Date,
 }
+
